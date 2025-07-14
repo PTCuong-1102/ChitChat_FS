@@ -40,7 +40,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
   useEffect(() => {
     if (isAuthenticated && token) {
-      const wsUrl = `ws://localhost:8000?token=${token}`;
+      const wsUrl = `${import.meta.env.VITE_WS_URL || 'ws://localhost:8000'}?token=${token}`;
       socketRef.current = new WebSocket(wsUrl);
 
       socketRef.current.onopen = () => {
