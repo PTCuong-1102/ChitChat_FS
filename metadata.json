@@ -1,0 +1,5 @@
+{
+  "name": "ChitChat App",
+  "description": "A modern, real-time chat application with a beautiful user interface, direct messaging, group chats, and an integrated AI assistant powered by Gemini.",
+  "requestFramePermissions": []
+}

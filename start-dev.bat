@@ -1,0 +1,3 @@
+@echo off
+echo 🚀 Starting ChitChat Frontend...
+npm run dev
