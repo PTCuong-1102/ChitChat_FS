@@ -10,7 +10,7 @@ interface ChatContextType {
   isLoading: boolean;
   loadChats: () => Promise<void>;
   setActiveChat: (chat: Chat | null) => void;
-  sendMessage: (roomId: string, content: string, messageType?: 'text' | 'image' | 'link') => void;
+  sendMessage: (roomId: string, content: string, messageType?: 'text' | 'image' | 'link') => Promise<void>;
   createRoom: (name: string, type: 'dm' | 'group', participants: string[]) => Promise<void>;
   loadMessages: (roomId: string) => Promise<Message[]>;
   sendTypingIndicator: (roomId: string, isTyping: boolean) => void;
@@ -40,29 +40,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
   useEffect(() => {
     if (isAuthenticated && token) {
-      const wsUrl = `${import.meta.env.VITE_WS_URL || 'ws://localhost:8000'}?token=${token}`;
-      socketRef.current = new WebSocket(wsUrl);
-
-      socketRef.current.onopen = () => {
-        console.log('🔌 WebSocket connection established');
-      };
-
-      socketRef.current.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        handleSocketMessage(data);
-      };
-
-      socketRef.current.onclose = () => {
-        console.log('🔌 WebSocket connection closed');
-      };
-
-      socketRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
-      };
-
-      return () => {
-        socketRef.current?.close();
-      };
+      console.log('🔌 Supabase real-time connection established');
+      // TODO: Implement Supabase real-time subscriptions for messages
     }
   }, [isAuthenticated, token]);
 
@@ -123,26 +102,19 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     }
   };
 
-  const sendMessage = (roomId: string, content: string, messageType: 'text' | 'image' | 'link' = 'text') => {
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      const message = {
-        type: 'send_message',
-        roomId,
-        content,
-        messageType,
-      };
-      socketRef.current.send(JSON.stringify(message));
+  const sendMessage = async (roomId: string, content: string, messageType: 'text' | 'image' | 'link' = 'text') => {
+    try {
+      await apiService.sendMessage(roomId, { text: content, type: messageType });
+      // Reload messages after sending
+      loadMessages(roomId);
+    } catch (error) {
+      console.error('Failed to send message:', error);
     }
   };
 
   const sendTypingIndicator = (roomId: string, isTyping: boolean) => {
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      const message = {
-        type: isTyping ? 'typing' : 'stop_typing',
-        roomId,
-      };
-      socketRef.current.send(JSON.stringify(message));
-    }
+    // TODO: Implement typing indicator with Supabase real-time
+    console.log('Typing indicator:', { roomId, isTyping });
   };
 
   const createRoom = async (name: string, type: 'dm' | 'group', participants: string[]) => {
@@ -156,15 +128,11 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   };
 
   const handleSetActiveChat = (chat: Chat | null) => {
-    if (activeChat && socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-        socketRef.current.send(JSON.stringify({ type: 'leave_room', roomId: activeChat.id }));
-    }
     setActiveChat(chat);
-    if (chat && socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-        socketRef.current.send(JSON.stringify({ type: 'join_room', roomId: chat.id }));
-        if (!chat.messages || chat.messages.length === 0) {
-            loadMessages(chat.id);
-        }
+    if (chat) {
+      if (!chat.messages || chat.messages.length === 0) {
+        loadMessages(chat.id);
+      }
     }
   };
 

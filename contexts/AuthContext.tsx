@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  token: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (userData: {
     username: string;
@@ -13,7 +14,7 @@ interface AuthContextType {
     password: string;
     fullName: string;
   }) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,21 +35,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
 
   // Check if user is authenticated on app start
   useEffect(() => {
     const initAuth = async () => {
       try {
-        if (apiService.isAuthenticated()) {
+        const isAuth = await apiService.isAuthenticated();
+        if (isAuth) {
           const userProfile = await apiService.getProfile();
+          const userToken = await apiService.getToken();
           setUser(userProfile);
+          setToken(userToken);
           setIsAuthenticated(true);
         }
       } catch (error) {
         console.error('Failed to get user profile:', error);
         // If token is invalid, remove it
-        apiService.logout();
+        await apiService.logout();
         setIsAuthenticated(false);
+        setToken(null);
       } finally {
         setIsLoading(false);
       }
@@ -64,6 +70,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await apiService.login({ email, password });
       console.log('AuthContext: Login successful, user:', response.user);
       setUser(response.user);
+      setToken(response.token);
       setIsAuthenticated(true);
       console.log('AuthContext: User set in state');
     } catch (error) {
@@ -93,6 +100,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await apiService.register(backendUserData);
       console.log('AuthContext: Registration successful, user:', response.user);
       setUser(response.user);
+      setToken(response.token);
       setIsAuthenticated(true);
     } catch (error) {
       console.error('AuthContext: Registration failed:', error);
@@ -102,9 +110,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    apiService.logout();
+  const logout = async () => {
+    await apiService.logout();
     setUser(null);
+    setToken(null);
     setIsAuthenticated(false);
   };
 
@@ -112,6 +121,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     isLoading,
     isAuthenticated,
+    token,
     login,
     register,
     logout,
