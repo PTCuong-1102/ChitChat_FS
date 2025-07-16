@@ -1,10 +1,10 @@
 export interface User {
   id: string;
   full_name?: string; // Maps to backend full_name
-  user_name: string; // Maps to backend user_name
+  user_name?: string; // Maps to backend user_name
   avatar_url?: string; // Maps to backend avatar_url
   email: string;
-  status: boolean; // Backend uses boolean, not string
+  status: boolean | string; // Backend uses boolean, frontend may use string
   // Frontend-only properties for compatibility
   name?: string; // Computed from full_name
   username?: string; // Computed from user_name

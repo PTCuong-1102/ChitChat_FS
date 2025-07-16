@@ -24,7 +24,7 @@ export const USERS: User[] = [
     { id: 'user-5', name: 'Wumpus', username: 'wumpus_mc', avatar: 'https://picsum.photos/seed/wumpus/48/48', email: 'wumpus@mc.com', status: 'online', activity: 'Streaming Minecraft' },
     { id: 'user-6', name: 'Locke', username: 'locke_hike', avatar: 'https://picsum.photos/seed/locke/48/48', email: 'locke@hike.com', status: 'online', activity: "I'm on a hike trip today!" },
     { id: 'user-7', name: 'Clyde', username: 'clyde_au', avatar: 'https://picsum.photos/seed/clyde/48/48', email: 'clyde@au.com', status: 'online', activity: 'Playing Among Us' },
-    { id: 'user-gemini', name: 'Gemini Bot', username: 'gemini-bot', avatar: 'https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d63ea73de9292a71b4a3.gif', email: '', status: 'online', isBot: true, model: 'gemini-2.5-flash', provider: 'gemini' },
+    { id: 'user-gemini', name: 'Gemini Bot', username: 'gemini-bot', avatar: 'https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d63ea73de9292a71b4a3.gif', email: '', status: 'online', isBot: true, model: 'gemini-1.5-flash', provider: 'gemini' },
 ];
 
 export const AI_BOTS: User[] = USERS.filter(u => u.isBot && u.id === 'user-gemini');

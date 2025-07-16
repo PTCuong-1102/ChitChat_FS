@@ -105,6 +105,24 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const sendMessage = async (roomId: string, content: string, messageType: 'text' | 'image' | 'link' = 'text') => {
     try {
       await apiService.sendMessage(roomId, { text: content, type: messageType });
+      
+      // Check if this is a bot chat and generate AI response
+      const chat = chats.find(c => c.id === roomId);
+      if (chat && chat.isBotChat) {
+        try {
+          const aiResponse = await apiService.generateAiResponse(content);
+          
+          // Add a slight delay to make it feel more natural
+          setTimeout(async () => {
+            await apiService.sendMessage(roomId, { text: aiResponse, type: 'text' });
+            // Reload messages after AI response
+            loadMessages(roomId);
+          }, 1000);
+        } catch (aiError) {
+          console.error('Failed to generate AI response:', aiError);
+        }
+      }
+      
       // Reload messages after sending
       loadMessages(roomId);
     } catch (error) {

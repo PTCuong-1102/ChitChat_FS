@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useChat } from '../../contexts/ChatContext';
 import { AI_BOTS } from '../../constants';
 import { Chat, User, Message } from '../../types';
+import { apiService } from '../../services/apiService';
 import CreateGroupModal from '../modals/CreateGroupModal';
 import { UserProfileModal } from '../modals/UserProfileModal';
 import FriendRequestsModal from '../modals/FriendRequestsModal';
@@ -71,8 +72,46 @@ const ChatInterface: React.FC<{ onSignOut: () => void }> = ({ onSignOut }) => {
     sendMessage(activeChat.id, text, type);
   }, [activeChat, sendMessage]);
 
-  const handleConfigureBot = (botName: string, model: string, provider: string, apiKey: string) => {
-    // This functionality should be handled by the backend
+  const handleConfigureBot = async (botName: string, model: string, provider: string, apiKey: string) => {
+    try {
+      // Configure the bot in the backend
+      await apiService.configureBot(botName, model, provider, apiKey);
+      
+      // Create or update the AI bot in the frontend
+      const aiBot: User = {
+        id: `bot-${provider}-${Date.now()}`,
+        name: botName,
+        username: `${botName.toLowerCase().replace(/\s+/g, '-')}-bot`,
+        avatar: 'https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d63ea73de9292a71b4a3.gif',
+        email: '',
+        status: 'online',
+        isBot: true,
+        model,
+        provider,
+        full_name: botName,
+        user_name: `${botName.toLowerCase().replace(/\s+/g, '-')}-bot`,
+        avatar_url: 'https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d63ea73de9292a71b4a3.gif'
+      };
+      
+      // Update the bots list
+      setBots(prevBots => {
+        const existingBotIndex = prevBots.findIndex(bot => bot.provider === provider);
+        if (existingBotIndex !== -1) {
+          const updatedBots = [...prevBots];
+          updatedBots[existingBotIndex] = aiBot;
+          return updatedBots;
+        } else {
+          return [...prevBots, aiBot];
+        }
+      });
+      
+      // Store the API key for later use
+      setApiKeys(prev => ({ ...prev, [provider]: apiKey }));
+      
+    } catch (error) {
+      console.error('Failed to configure bot:', error);
+      // You can add toast/notification here
+    }
   };
 
   const handleUpdateProfile = (updatedUser: User) => {

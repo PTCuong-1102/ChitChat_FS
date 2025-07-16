@@ -9,7 +9,7 @@ interface ConfigureAIBotModalProps {
 const LLM_PROVIDERS = {
   gemini: {
     name: 'Google Gemini',
-    models: [{ id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' }],
+    models: [{ id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' }],
   },
   // Future providers can be added here
   openai: {

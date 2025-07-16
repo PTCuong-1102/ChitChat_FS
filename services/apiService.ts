@@ -1,6 +1,5 @@
 import { User, Chat, Message } from '../types';
-
-const API_BASE_URL = '/api';
+import { getApiUrl } from './config';
 
 class ApiService {
   private getToken(): string | null {
@@ -24,7 +23,7 @@ class ApiService {
     password: string;
     fullName: string;
   }): Promise<{ user: User; token: string }> {
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    const response = await fetch(getApiUrl('/auth/register'), {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({
@@ -46,7 +45,7 @@ class ApiService {
     email: string;
     password: string;
   }): Promise<{ user: User; token: string }> {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const response = await fetch(getApiUrl('/auth/login'), {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({ usernameOrEmail: credentials.email, password: credentials.password }),
@@ -61,7 +60,7 @@ class ApiService {
   }
 
   async getProfile(): Promise<User> {
-    const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+    const response = await fetch(getApiUrl('/auth/profile'), {
       headers: this.getHeaders(),
     });
     if (!response.ok) {
@@ -93,7 +92,7 @@ class ApiService {
   }
 
   async getRooms(): Promise<Chat[]> {
-    const response = await fetch(`${API_BASE_URL}/chat/rooms`, {
+    const response = await fetch(getApiUrl('/chat/rooms'), {
         headers: this.getHeaders(),
     });
     if (!response.ok) {
@@ -102,8 +101,32 @@ class ApiService {
     return response.json();
   }
 
+  async generateAiResponse(prompt: string): Promise<string> {
+    const response = await fetch(getApiUrl('/gemini/generate'), {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ prompt }),
+    });
+    if (!response.ok) {
+      throw new Error('AI response generation failed');
+    }
+    const data = await response.json();
+    return data.response;
+  }
+
+  async configureBot(botName: string, model: string, provider: string, apiKey: string): Promise<void> {
+    const response = await fetch(getApiUrl('/gemini/configure'), {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ botName, model, provider, apiKey }),
+    });
+    if (!response.ok) {
+      throw new Error('Configuring bot failed');
+    }
+  }
+
   async createRoom(roomData: { name: string; type: 'dm' | 'group'; participants: string[] }): Promise<Chat> {
-    const response = await fetch(`${API_BASE_URL}/chat/rooms`, {
+    const response = await fetch(getApiUrl('/chat/rooms'), {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify({
@@ -119,7 +142,7 @@ class ApiService {
   }
 
   async getRoomMessages(roomId: string): Promise<Message[]> {
-    const response = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}/messages`, {
+    const response = await fetch(getApiUrl(`/chat/rooms/${roomId}/messages`), {
         headers: this.getHeaders(),
     });
     if (!response.ok) {
@@ -129,7 +152,7 @@ class ApiService {
   }
 
   async sendMessage(roomId: string, messageData: { text: string; type: 'text' | 'image' | 'link' }): Promise<Message> {
-    const response = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}/messages`, {
+    const response = await fetch(getApiUrl(`/chat/rooms/${roomId}/messages`), {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify({ content: messageData.text, messageType: messageData.type }),
@@ -141,7 +164,7 @@ class ApiService {
   }
 
   async getFriends(): Promise<User[]> {
-    const response = await fetch(`${API_BASE_URL}/friends`, {
+    const response = await fetch(getApiUrl('/friends'), {
         headers: this.getHeaders(),
     });
     if (!response.ok) {
@@ -151,7 +174,7 @@ class ApiService {
   }
 
   async sendFriendRequest(friendEmail: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/friends/requests`, {
+    const response = await fetch(getApiUrl('/friends/requests'), {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify({ email: friendEmail }),
@@ -162,7 +185,7 @@ class ApiService {
   }
 
   async getFriendRequests(): Promise<any[]> {
-    const response = await fetch(`${API_BASE_URL}/friends/requests`, {
+    const response = await fetch(getApiUrl('/friends/requests'), {
         headers: this.getHeaders(),
     });
     if (!response.ok) {
@@ -172,7 +195,7 @@ class ApiService {
   }
 
   async acceptFriendRequest(requestId: number): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/friends/requests/${requestId}/accept`, {
+    const response = await fetch(getApiUrl(`/friends/requests/${requestId}/accept`), {
         method: 'PUT',
         headers: this.getHeaders(),
     });
@@ -182,7 +205,7 @@ class ApiService {
   }
 
   async rejectFriendRequest(requestId: number): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/friends/requests/${requestId}/reject`, {
+    const response = await fetch(getApiUrl(`/friends/requests/${requestId}/reject`), {
       method: 'PUT',
       headers: this.getHeaders(),
     });
@@ -192,7 +215,7 @@ class ApiService {
   }
 
   async removeFriend(friendId: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/friends/${friendId}`, {
+    const response = await fetch(getApiUrl(`/friends/${friendId}`), {
       method: 'DELETE',
       headers: this.getHeaders(),
     });
@@ -202,7 +225,7 @@ class ApiService {
   }
 
   async searchUsers(query: string): Promise<User[]> {
-    const response = await fetch(`${API_BASE_URL}/users/search?q=${query}`, {
+    const response = await fetch(getApiUrl(`/users/search?q=${query}`), {
       headers: this.getHeaders(),
     });
     if (!response.ok) {
@@ -212,7 +235,7 @@ class ApiService {
   }
 
   async findUser(query: string): Promise<{ user: User; status: string } | null> {
-    const response = await fetch(`${API_BASE_URL}/users/find?q=${query}`, {
+    const response = await fetch(getApiUrl(`/users/find?q=${query}`), {
       headers: this.getHeaders(),
     });
     if (!response.ok) {
