@@ -27,7 +27,14 @@ const ChatView: React.FC<ChatViewProps> = ({ chat, onSendMessage, currentUser, u
     }
   };
   
-  const getUserById = (id: string) => users.find(u => u.id === id);
+  const getUserById = (id: string) => {
+    // First check chat participants
+    const participant = chat.participants.find(p => p.id === id);
+    if (participant) return participant;
+    
+    // Then check users array (fallback)
+    return users.find(u => u.id === id);
+  };
   
   const renderMessageContent = (message: Message) => {
     switch(message.type) {

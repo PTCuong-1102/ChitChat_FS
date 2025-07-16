@@ -10,6 +10,7 @@ interface ChatContextType {
   isLoading: boolean;
   loadChats: () => Promise<void>;
   setActiveChat: (chat: Chat | null) => void;
+  setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
   sendMessage: (roomId: string, content: string, messageType?: 'text' | 'image' | 'link') => Promise<void>;
   createRoom: (name: string, type: 'dm' | 'group', participants: string[]) => Promise<void>;
   loadMessages: (roomId: string) => Promise<Message[]>;
@@ -34,7 +35,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated, user: currentUser } = useAuth();
   const { loadFriendRequests } = useFriends();
   const socketRef = useRef<WebSocket | null>(null);
 
@@ -103,30 +104,85 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   };
 
   const sendMessage = async (roomId: string, content: string, messageType: 'text' | 'image' | 'link' = 'text') => {
+    const chat = chats.find(c => c.id === roomId);
+    if (!chat) {
+      console.error('Chat not found for room:', roomId);
+      return;
+    }
+
+    // Create the user message
+    const userMessage: Message = {
+      id: `msg-${Date.now()}`,
+      senderId: currentUser?.id || 'current-user',
+      text: content,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      type: messageType
+    };
+
+    // Add the user message to the chat immediately for UI responsiveness
+    const updatedChat = {
+      ...chat,
+      messages: [...(chat.messages || []), userMessage]
+    };
+
+    // Update the chat in the chats list
+    setChats(prevChats => 
+      prevChats.map(c => c.id === roomId ? updatedChat : c)
+    );
+
+    // Update active chat if it's the current one
+    if (activeChat && activeChat.id === roomId) {
+      setActiveChat(updatedChat);
+    }
+
     try {
-      await apiService.sendMessage(roomId, { text: content, type: messageType });
-      
-      // Check if this is a bot chat and generate AI response
-      const chat = chats.find(c => c.id === roomId);
-      if (chat && chat.isBotChat) {
+      if (chat.isBotChat) {
+        // For bot chats, generate AI response
         try {
           const aiResponse = await apiService.generateAiResponse(content);
           
-          // Add a slight delay to make it feel more natural
-          setTimeout(async () => {
-            await apiService.sendMessage(roomId, { text: aiResponse, type: 'text' });
-            // Reload messages after AI response
-            loadMessages(roomId);
+          // Add AI response after a delay
+          setTimeout(() => {
+            const botMessage: Message = {
+              id: `msg-${Date.now()}-bot`,
+              senderId: chat.participants.find(p => p.isBot)?.id || 'bot',
+              text: aiResponse,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              type: 'text'
+            };
+
+            // Add bot message to the chat
+            const chatWithBotResponse = {
+              ...updatedChat,
+              messages: [...updatedChat.messages, botMessage]
+            };
+
+            setChats(prevChats => 
+              prevChats.map(c => c.id === roomId ? chatWithBotResponse : c)
+            );
+
+            if (activeChat && activeChat.id === roomId) {
+              setActiveChat(chatWithBotResponse);
+            }
           }, 1000);
         } catch (aiError) {
           console.error('Failed to generate AI response:', aiError);
         }
+      } else {
+        // For regular chats, send to backend
+        await apiService.sendMessage(roomId, { text: content, type: messageType });
+        // Reload messages after sending to get the latest from backend
+        loadMessages(roomId);
       }
-      
-      // Reload messages after sending
-      loadMessages(roomId);
     } catch (error) {
       console.error('Failed to send message:', error);
+      // Remove the message from UI if sending failed
+      setChats(prevChats => 
+        prevChats.map(c => c.id === roomId ? chat : c)
+      );
+      if (activeChat && activeChat.id === roomId) {
+        setActiveChat(chat);
+      }
     }
   };
 
@@ -160,6 +216,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     isLoading,
     loadChats,
     setActiveChat: handleSetActiveChat,
+    setChats,
     sendMessage,
     createRoom,
     loadMessages,

@@ -21,7 +21,7 @@ type FriendshipStatus = 'friends' | 'request_sent' | 'not_friends';
 
 const ChatInterface: React.FC<{ onSignOut: () => void }> = ({ onSignOut }) => {
   const { user: currentUser, logout } = useAuth();
-  const { chats, activeChat, setActiveChat, sendMessage, createRoom, loadChats } = useChat();
+  const { chats, activeChat, setActiveChat, sendMessage, createRoom, loadChats, setChats } = useChat();
   const [activeServerId, setActiveServerId] = useState<string>('home');
   const [view, setView] = useState<View>('friends');
   const [modal, setModal] = useState<Modal>(null);
@@ -43,7 +43,7 @@ const ChatInterface: React.FC<{ onSignOut: () => void }> = ({ onSignOut }) => {
     setManagementPanelOpen(false);
   };
 
-  const handleSelectServer = (serverId: string) => {
+  const handleSelectServer = async (serverId: string) => {
     setActiveServerId(serverId);
     setManagementPanelOpen(false);
     if (serverId === 'home') {
@@ -51,10 +51,45 @@ const ChatInterface: React.FC<{ onSignOut: () => void }> = ({ onSignOut }) => {
       setActiveChat(null);
       setSearchQuery('');
     } else {
-      const botChat = chats.find(c => c.isBotChat && c.participants.some(p => p.id === serverId));
-      if (botChat) {
-        setActiveChat(botChat);
-        setView('chat');
+      // Find the bot based on serverId
+      const bot = bots.find(b => b.id === serverId);
+      if (bot) {
+        // Check if a bot chat already exists
+        let botChat = chats.find(c => c.isBotChat && c.name === bot.name);
+        
+        if (!botChat) {
+          // Create a new bot chat room
+          try {
+            const newBotChat: Chat = {
+              id: `bot-chat-${bot.id}`,
+              type: 'dm',
+              name: bot.name,
+              participants: [currentUser!, bot],
+              messages: [{
+                id: `msg-${Date.now()}`,
+                senderId: bot.id,
+                text: `Hello! I'm ${bot.name}. How can I help you today?`,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                type: 'text'
+              }],
+              isBotChat: true,
+              lastMessagePreview: `Hello! I'm ${bot.name}. How can I help you today?`
+            };
+            
+            // Add the bot chat to the chats list and set as active
+            setChats(prevChats => [...prevChats, newBotChat]);
+            setActiveChat(newBotChat);
+            setView('chat');
+            
+            // Note: We don't call createRoom for bot chats since they're virtual
+            // The backend will handle bot responses when messages are sent
+          } catch (error) {
+            console.error('Failed to create bot chat:', error);
+          }
+        } else {
+          setActiveChat(botChat);
+          setView('chat');
+        }
       }
     }
   };
