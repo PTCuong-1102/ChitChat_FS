@@ -1,5 +1,5 @@
 // Configuration for API endpoints
-const isDevelopment = import.meta.env.MODE === 'development';
+const isDevelopment = 'development';
 
 export const API_CONFIG = {
   BASE_URL: isDevelopment ? 'http://localhost:8080' : '',
