@@ -1,0 +1,34 @@
+{
+  "name": "chitchat-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "vite",
+    "start:win": "start-dev.bat",
+    "start:unix": "chmod +x start-dev.sh && ./start-dev.sh",
+    "clean": "rm -rf dist node_modules",
+    "clean:win": "rmdir /s /q dist node_modules",
+    "lint": "eslint . --ext js,jsx,ts,tsx",
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,md}\""
+  },
+  "dependencies": {
+    "@google/genai": "^1.9.0",
+    "@stomp/stompjs": "^7.1.1",
+    "@supabase/supabase-js": "^2.51.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "sockjs-client": "^1.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@types/sockjs-client": "^1.5.4",
+    "typescript": "~5.7.2",
+    "vite": "^6.3.5"
+  }
+}
