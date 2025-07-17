@@ -112,3 +112,4 @@ The project is organized into logical folders to make navigation and development
 ├── types.ts              # Shared TypeScript types and interfaces
 └── README.md             # This file
 ```
+"# ChitChat_FE" 
